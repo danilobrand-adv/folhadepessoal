@@ -18,10 +18,10 @@
             </div>
             <div class="flex items-center gap-3">
                 <label class="bg-blue-600 hover:bg-blue-500 px-6 py-2.5 rounded-full cursor-pointer text-sm font-bold shadow-lg transition-all active:scale-95 text-center text-white border-none">
-                    Importar CSVs
+                    Importar CSVs Manualmente
                     <input type="file" id="csvFile" accept=".csv" multiple class="hidden">
                 </label>
-                <button onclick="window.location.reload()" class="p-2 hover:bg-slate-800 rounded-full text-slate-400">
+                <button onclick="window.location.reload()" class="p-2 hover:bg-slate-800 rounded-full text-slate-400" title="Recarregar dados">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </button>
             </div>
@@ -101,65 +101,20 @@
                         <div id="vinculoTrendSelector" class="flex flex-wrap gap-2"></div>
                     </div>
                 </div>
-                <div class="relative h-96"> <canvas id="trendChart"></canvas>
+                <div class="relative h-96">
+                    <canvas id="trendChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-       
-       
-       // Configurações do seu repositório
-const REPO_USER = "danilobrand-adv";
-const REPO_NAME = "folhadepessoal";
-const FOLDER_PATH = "dados";
-
-// Função que inicia tudo automaticamente
-window.onload = async function() {
-    await carregarArquivosAutomaticamente();
-};
-
-async function carregarArquivosAutomaticamente() {
-    try {
-        // 1. Pergunta ao GitHub quais arquivos existem na pasta /dados
-        const response = await fetch(`https://api.github.com/repos/${REPO_USER}/${REPO_NAME}/contents/${FOLDER_PATH}`);
-        const files = await response.json();
-
-        // 2. Filtra apenas os arquivos .csv
-        const csvFiles = files.filter(file => file.name.endsWith('.csv'));
-        
-        let processed = 0;
-        dataStore = {}; 
-
-        // 3. Faz o download e o parse de cada um deles
-        for (const file of csvFiles) {
-            Papa.parse(file.download_url, {
-                download: true,
-                delimiter: ";",
-                encoding: "ISO-8859-1",
-                skipEmptyLines: true,
-                complete: function(results) {
-                    processCSV(results.data);
-                    processed++;
-                    // 4. Quando o último arquivo for lido, renderiza o painel
-                    if (processed === csvFiles.length) {
-                        finalizeImport();
-                        console.log("Todos os meses carregados com sucesso!");
-                    }
-                }
-            });
-        }
-    } catch (error) {
-        console.error("Erro ao carregar dados automáticos:", error);
-        alert("Não foi possível carregar os dados automáticos. Tente importar manualmente.");
-    }
-}
-       
-       
-       
-        // Registrar o plugin globalmente
+        // --- CONFIGURAÇÕES E VARIÁVEIS GLOBAIS ---
         Chart.register(ChartDataLabels);
+        
+        const REPO_USER = "danilobrand-adv";
+        const REPO_NAME = "folhadepessoal";
+        const FOLDER_PATH = "dados";
 
         let dataStore = {};
         let currentMonth = "";
@@ -168,9 +123,51 @@ async function carregarArquivosAutomaticamente() {
         let chartInstance = null;
         let trendChartInstance = null;
 
-        // --- LÓGICA DE IMPORTAÇÃO E PARSE (Mantida) ---
+        // --- INICIALIZAÇÃO ---
+        window.onload = function() {
+            carregarArquivosAutomaticamente();
+        };
+
+        // --- FUNÇÕES DE CARREGAMENTO (API GITHUB) ---
+        async function carregarArquivosAutomaticamente() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/${REPO_USER}/${REPO_NAME}/contents/${FOLDER_PATH}`);
+                if (!response.ok) throw new Error("Não foi possível acessar a pasta de dados.");
+                
+                const files = await response.json();
+                const csvFiles = files.filter(file => file.name.endsWith('.csv'));
+
+                if (csvFiles.length === 0) {
+                    console.warn("Nenhum arquivo CSV encontrado na pasta /dados.");
+                    return;
+                }
+
+                let processed = 0;
+                dataStore = {}; 
+
+                csvFiles.forEach(file => {
+                    Papa.parse(file.download_url, {
+                        download: true,
+                        delimiter: ";",
+                        encoding: "ISO-8859-1",
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            processCSV(results.data);
+                            processed++;
+                            if (processed === csvFiles.length) finalizeImport();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error("Erro na automação:", error);
+            }
+        }
+
+        // --- IMPORTAÇÃO MANUAL ---
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
             let processed = 0;
             dataStore = {}; 
             files.forEach(file => {
@@ -185,14 +182,25 @@ async function carregarArquivosAutomaticamente() {
             });
         });
 
+        // --- PROCESSAMENTO DE DADOS ---
+        function parseCurrency(val) {
+            if (!val) return 0;
+            return parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
         function processCSV(data) {
-            let rawEnte = data[0].find(cell => cell.trim().length > 3 && !cell.includes('/') && !cell.includes('Mês')) || "OUTROS";
+            if (!data || data.length === 0) return;
+
+            let rawEnte = data[0].find(cell => cell && cell.trim().length > 3 && !cell.includes('/') && !cell.includes('Mês')) || "OUTROS";
             let ente = rawEnte.trim().toUpperCase();
             let mesRef = "";
+            
             for(let i=0; i<10; i++) {
+                if(!data[i]) continue;
                 let rowStr = data[i].join(' ');
                 if(/\d{2}\/\d{4}/.test(rowStr)) { mesRef = rowStr.match(/\d{2}\/\d{4}/)[0]; break; }
             }
+
             if(!mesRef) return;
             if(!dataStore[mesRef]) dataStore[mesRef] = {};
             if(!dataStore[mesRef][ente]) dataStore[mesRef][ente] = { name: ente, vinculos: {} };
@@ -227,13 +235,11 @@ async function carregarArquivosAutomaticamente() {
             });
         }
 
-        function parseCurrency(val) {
-            if (!val) return 0;
-            return parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0;
-        }
-
         function finalizeImport() {
-            Object.keys(dataStore).forEach(mes => {
+            const monthsList = Object.keys(dataStore);
+            if (monthsList.length === 0) return;
+
+            monthsList.forEach(mes => {
                 dataStore[mes]["CONSOLIDADO"] = { name: "CONSOLIDADO GERAL", vinculos: {} };
                 Object.keys(dataStore[mes]).forEach(ente => {
                     if (ente === "CONSOLIDADO") return;
@@ -245,37 +251,25 @@ async function carregarArquivosAutomaticamente() {
                     });
                 });
             });
-            const months = Object.keys(dataStore).sort((a,b) => {
+
+            const sortedMonths = Object.keys(dataStore).sort((a,b) => {
                 const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
                 return new Date(y1, m1-1) - new Date(y2, m2-1);
             });
+
             const sel = document.getElementById('monthSelector');
-            sel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            sel.innerHTML = sortedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
             sel.onchange = (e) => { currentMonth = e.target.value; updateDashboard(); };
-            currentMonth = months[0];
+            
+            // Inicia no mês mais recente disponível
+            currentMonth = sortedMonths[sortedMonths.length - 1];
+            sel.value = currentMonth;
+            
             document.getElementById('filterBar').classList.remove('hidden');
             updateDashboard();
         }
 
-        function renderVinculoTrendButtons() {
-            const container = document.getElementById('vinculoTrendSelector');
-            container.innerHTML = '';
-            let vinculosUnicos = new Set();
-            Object.values(dataStore).forEach(mes => { if(mes[currentEnte]) Object.values(mes[currentEnte].vinculos).forEach(v => vinculosUnicos.add(v.nome)); });
-            const btnTodos = document.createElement('button');
-            btnTodos.innerText = 'GERAL (SOMA)';
-            btnTodos.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === 'TODOS' ? 'bg-slate-700 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
-            btnTodos.onclick = () => { currentTrendVinculo = 'TODOS'; renderVinculoTrendButtons(); renderTrendChart(); };
-            container.appendChild(btnTodos);
-            Array.from(vinculosUnicos).sort().forEach(nome => {
-                const btn = document.createElement('button');
-                btn.innerText = nome;
-                btn.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === nome ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
-                btn.onclick = () => { currentTrendVinculo = nome; renderVinculoTrendButtons(); renderTrendChart(); };
-                container.appendChild(btn);
-            });
-        }
-
+        // --- RENDERIZAÇÃO DE INTERFACE ---
         function renderEnteButtons() {
             const container = document.getElementById('enteSelector');
             container.innerHTML = '';
@@ -290,14 +284,38 @@ async function carregarArquivosAutomaticamente() {
             });
         }
 
+        function renderVinculoTrendButtons() {
+            const container = document.getElementById('vinculoTrendSelector');
+            container.innerHTML = '';
+            let vinculosUnicos = new Set();
+            Object.values(dataStore).forEach(mes => { if(mes[currentEnte]) Object.values(mes[currentEnte].vinculos).forEach(v => vinculosUnicos.add(v.nome)); });
+            
+            const btnTodos = document.createElement('button');
+            btnTodos.innerText = 'GERAL (SOMA)';
+            btnTodos.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === 'TODOS' ? 'bg-slate-700 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
+            btnTodos.onclick = () => { currentTrendVinculo = 'TODOS'; renderVinculoTrendButtons(); renderTrendChart(); };
+            container.appendChild(btnTodos);
+
+            Array.from(vinculosUnicos).sort().forEach(nome => {
+                const btn = document.createElement('button');
+                btn.innerText = nome;
+                btn.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === nome ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
+                btn.onclick = () => { currentTrendVinculo = nome; renderVinculoTrendButtons(); renderTrendChart(); };
+                container.appendChild(btn);
+            });
+        }
+
         function updateDashboard() {
             renderEnteButtons();
             renderVinculoTrendButtons();
             document.getElementById('dashboard').classList.remove('hidden');
+            
             const data = dataStore[currentMonth][currentEnte];
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
+            
             let tB = 0, tP = 0, tL = 0, tQ = 0, chartLabels = [], chartData = [];
+
             Object.keys(data.vinculos).forEach(id => {
                 const v = data.vinculos[id];
                 if(v.bruto === 0 && v.qtd === 0) return;
@@ -305,29 +323,26 @@ async function carregarArquivosAutomaticamente() {
                 chartLabels.push(v.nome); chartData.push(v.bruto);
                 tbody.innerHTML += `<tr><td class="px-6 py-4 font-bold text-slate-700 italic">${v.nome}</td><td class="px-6 py-4 text-center font-bold text-blue-600">${v.qtd}</td><td class="px-6 py-4 text-right">R$ ${v.bruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="px-6 py-4 text-right text-orange-600 font-bold">R$ ${v.patronal.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>`;
             });
+
             document.getElementById('kpi-bruto').innerText = 'R$ ' + tB.toLocaleString('pt-BR', {minimumFractionDigits:2});
             document.getElementById('kpi-patronal').innerText = 'R$ ' + tP.toLocaleString('pt-BR', {minimumFractionDigits:2});
             document.getElementById('kpi-liquido').innerText = 'R$ ' + tL.toLocaleString('pt-BR', {minimumFractionDigits:2});
             document.getElementById('kpi-servidores').innerText = tQ;
             document.getElementById('dataLabel').innerText = `${currentEnte} • ${currentMonth}`;
             document.getElementById('trendLabel').innerText = `${currentEnte} / ${currentTrendVinculo}`;
+            
             renderPieChart(chartLabels, chartData);
             renderTrendChart();
         }
 
+        // --- GRÁFICOS (CHART.JS) ---
         function renderPieChart(labels, data) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if(chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e40af', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], borderWidth: 0 }] },
-                options: { 
-                    maintainAspectRatio: false, 
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: 'bold' } } },
-                        datalabels: { display: false } // Desativado na pizza para não poluir
-                    } 
-                }
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: 'bold' } } }, datalabels: { display: false } } }
             });
         }
 
@@ -335,13 +350,13 @@ async function carregarArquivosAutomaticamente() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             if(trendChartInstance) trendChartInstance.destroy();
 
-            const months = Object.keys(dataStore).sort((a,b) => {
+            const sortedMonths = Object.keys(dataStore).sort((a,b) => {
                 const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
                 return new Date(y1, m1-1) - new Date(y2, m2-1);
             });
 
             const brutoData = [], qtdData = [];
-            months.forEach(m => {
+            sortedMonths.forEach(m => {
                 let monthBruto = 0, monthQtd = 0;
                 const enteData = dataStore[m][currentEnte];
                 if(enteData) {
@@ -355,67 +370,18 @@ async function carregarArquivosAutomaticamente() {
             trendChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: months,
+                    labels: sortedMonths,
                     datasets: [
-                        { 
-                            label: 'Gasto Bruto (R$)', 
-                            data: brutoData, 
-                            backgroundColor: '#3b82f6', 
-                            yAxisID: 'yFinance', 
-                            borderRadius: 5,
-                            datalabels: { // Configuração dos rótulos para Financeiro
-                                align: 'end',
-                                anchor: 'end',
-                                backgroundColor: 'white',
-                                borderRadius: 4,
-                                color: '#1e40af',
-                                font: { weight: 'bold', size: 10 },
-                                formatter: (value) => 'R$ ' + value.toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
-                            }
-                        },
-                        { 
-                            label: 'Qtd. Servidores', 
-                            data: qtdData, 
-                            backgroundColor: '#a855f7', 
-                            yAxisID: 'yPeople', 
-                            borderRadius: 5,
-                            datalabels: { // Configuração dos rótulos para Pessoal
-                                align: 'end',
-                                anchor: 'end',
-                                backgroundColor: 'white',
-                                borderRadius: 4,
-                                color: '#6b21a8',
-                                font: { weight: 'bold', size: 10 },
-                                formatter: (value) => value
-                            }
-                        }
+                        { label: 'Gasto Bruto (R$)', data: brutoData, backgroundColor: '#3b82f6', yAxisID: 'yFinance', borderRadius: 5, datalabels: { align: 'end', anchor: 'end', backgroundColor: 'white', borderRadius: 4, color: '#1e40af', font: { weight: 'bold', size: 10 }, formatter: (value) => 'R$ ' + value.toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }) } },
+                        { label: 'Qtd. Servidores', data: qtdData, backgroundColor: '#a855f7', yAxisID: 'yPeople', borderRadius: 5, datalabels: { align: 'end', anchor: 'end', backgroundColor: 'white', borderRadius: 4, color: '#6b21a8', font: { weight: 'bold', size: 10 }, formatter: (value) => value } }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: { padding: { top: 30 } }, // Espaço extra para os números no topo
-                    plugins: {
-                        legend: { position: 'top', labels: { font: { weight: 'bold' } } },
-                        datalabels: {
-                            display: true,
-                            offset: 2,
-                        }
-                    },
+                    responsive: true, maintainAspectRatio: false, layout: { padding: { top: 30 } },
+                    plugins: { legend: { position: 'top', labels: { font: { weight: 'bold' } } }, datalabels: { display: true, offset: 2 } },
                     scales: {
-                        yFinance: { 
-                            type: 'linear', 
-                            position: 'left', 
-                            title: { display: true, text: 'Financeiro (R$)', font: { size: 10, weight: 'bold' } },
-                            suggestedMax: Math.max(...brutoData) * 1.15 // Espaço para o rótulo não cortar
-                        },
-                        yPeople: { 
-                            type: 'linear', 
-                            position: 'right', 
-                            grid: { drawOnChartArea: false }, 
-                            title: { display: true, text: 'Nº Servidores', font: { size: 10, weight: 'bold' } },
-                            suggestedMax: Math.max(...qtdData) * 1.15
-                        }
+                        yFinance: { type: 'linear', position: 'left', title: { display: true, text: 'Financeiro (R$)', font: { size: 10, weight: 'bold' } }, suggestedMax: Math.max(...brutoData) * 1.15 },
+                        yPeople: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Nº Servidores', font: { size: 10, weight: 'bold' } }, suggestedMax: Math.max(...qtdData) * 1.15 }
                     }
                 }
             });
