@@ -5,6 +5,7 @@
     <title>Painel de Controle Interno - Evolução Mensal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 pb-20">
@@ -13,11 +14,11 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">Sistema de Monitoramento de Folha</h1>
-                <p class="text-xs text-blue-400">Gestão Híbrida: Repositório + Upload Manual</p>
+                <p class="text-xs text-blue-400">Análise Temporal por Vínculo Jurídico</p>
             </div>
             <div class="flex items-center gap-3">
-                <label class="bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 rounded-full cursor-pointer text-sm font-bold shadow-lg transition-all active:scale-95 text-center text-white border-none">
-                    + Importar CSV Externo
+                <label class="bg-blue-600 hover:bg-blue-500 px-6 py-2.5 rounded-full cursor-pointer text-sm font-bold shadow-lg transition-all active:scale-95 text-center text-white border-none">
+                    Importar CSVs
                     <input type="file" id="csvFile" accept=".csv" multiple class="hidden">
                 </label>
                 <button onclick="window.location.reload()" class="p-2 hover:bg-slate-800 rounded-full text-slate-400">
@@ -28,66 +29,42 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 mt-6">
-        
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-            <button onclick="toggleAccordion()" class="w-full flex justify-between items-center p-4 bg-slate-100 hover:bg-slate-200 transition-colors">
-                <span class="font-bold text-slate-700 text-sm uppercase flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    Arquivos Disponíveis no Repositório
-                </span>
-                <svg id="accordionIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            
-            <div id="repoContent" class="p-4 border-t border-slate-200">
-                <p class="text-xs text-slate-400 mb-4 italic">Selecione os meses que deseja carregar para a análise consolidada:</p>
-                <div id="repoFileList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    </div>
-                <div class="mt-6 flex gap-3">
-                    <button onclick="carregarSelecionados()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md transition-all">
-                        Processar Selecionados
-                    </button>
-                    <button onclick="marcarTodos(true)" class="text-blue-600 text-xs font-bold hover:underline">Marcar Todos</button>
-                    <button onclick="marcarTodos(false)" class="text-slate-400 text-xs font-bold hover:underline">Desmarcar</button>
-                </div>
-            </div>
-        </div>
-
         <div id="filterBar" class="hidden flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl shadow-sm mb-6 border border-slate-200">
             <div class="flex flex-col">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Período de Análise</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Mês de Referência (Tabela)</label>
                 <select id="monthSelector" class="bg-slate-100 border-none rounded-lg px-4 py-2 font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"></select>
             </div>
             <div class="h-10 w-[1px] bg-slate-200 mx-2 hidden md:block"></div>
             <div class="flex flex-col flex-1">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Unidade / Ente</label>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Filtrar por Unidade / Ente</label>
                 <div id="enteSelector" class="flex flex-wrap gap-2 mt-1"></div>
             </div>
         </div>
 
         <div id="dashboard" class="hidden">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-blue-500 text-center">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-blue-500 text-center text-slate-900">
                     <p class="text-xs font-bold text-slate-400 uppercase">Proventos Brutos</p>
-                    <p id="kpi-bruto" class="text-2xl font-black mt-1 text-slate-900">R$ 0,00</p>
+                    <p id="kpi-bruto" class="text-2xl font-black mt-1">R$ 0,00</p>
                 </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-orange-500 text-center">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-orange-500 text-center text-orange-600">
                     <p class="text-xs font-bold text-slate-400 uppercase">Encargo Patronal</p>
-                    <p id="kpi-patronal" class="text-2xl font-black mt-1 text-orange-600">R$ 0,00</p>
+                    <p id="kpi-patronal" class="text-2xl font-black mt-1">R$ 0,00</p>
                 </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-emerald-500 text-center">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-emerald-500 text-center text-emerald-600">
                     <p class="text-xs font-bold text-slate-400 uppercase">Total Líquido</p>
-                    <p id="kpi-liquido" class="text-2xl font-black mt-1 text-emerald-600">R$ 0,00</p>
+                    <p id="kpi-liquido" class="text-2xl font-black mt-1">R$ 0,00</p>
                 </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-purple-500 text-center">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-t-4 border-purple-500 text-center text-purple-600">
                     <p class="text-xs font-bold text-slate-400 uppercase">Qtd. Servidores</p>
-                    <p id="kpi-servidores" class="text-2xl font-black mt-1 text-purple-600">0</p>
+                    <p id="kpi-servidores" class="text-2xl font-black mt-1">0</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden text-slate-900">
                     <div class="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                        <h3 class="font-black text-slate-700 uppercase text-xs">Radiografia por Vínculo</h3>
+                        <h3 class="font-black text-slate-700 uppercase text-xs">Radiografia Mensal por Vínculo</h3>
                         <span id="dataLabel" class="text-[10px] bg-slate-200 px-2 py-1 rounded text-slate-600 font-bold uppercase"></span>
                     </div>
                     <div class="overflow-x-auto">
@@ -105,8 +82,8 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 min-h-[350px]">
-                    <h3 class="font-black text-slate-700 uppercase text-xs mb-6 text-center">Distribuição de Custos</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center min-h-[350px]">
+                    <h3 class="font-black text-slate-700 uppercase text-xs mb-6 text-center">Distribuição de Custos (Mês Atual)</h3>
                     <div class="relative h-64">
                         <canvas id="mainChart"></canvas>
                     </div>
@@ -114,124 +91,55 @@
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">Evolução dos Indicadores</h3>
-                    <div id="trendLabel" class="text-[10px] text-blue-600 font-bold uppercase"></div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">Evolução dos Indicadores (Histórico Temporal)</h3>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase">Exibindo dados de: <span id="trendLabel" class="text-blue-600 font-bold">CONSOLIDADO</span></p>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase">Filtrar Gráfico por Vínculo:</label>
+                        <div id="vinculoTrendSelector" class="flex flex-wrap gap-2"></div>
+                    </div>
                 </div>
-                <div class="relative h-80">
-                    <canvas id="trendChart"></canvas>
+                <div class="relative h-96"> <canvas id="trendChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- LISTA DE ARQUIVOS NO REPOSITÓRIO (Edite aqui) ---
-        const arquivosDisponiveis = [
-            
-        { nome: "PREF - 03-2026 - EFET - COMI - CONT", path: "PREF - 03-2026 - EFET - COMI - CONT.csv" }
-          
-        ];
+        // Registrar o plugin globalmente
+        Chart.register(ChartDataLabels);
 
         let dataStore = {};
         let currentMonth = "";
         let currentEnte = "CONSOLIDADO";
+        let currentTrendVinculo = "TODOS";
         let chartInstance = null;
         let trendChartInstance = null;
 
-        // Inicializar lista de arquivos no repositório
-        window.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('repoFileList');
-            arquivosDisponiveis.forEach((arq, index) => {
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-300 transition-all cursor-pointer";
-                div.onclick = (e) => {
-                    if(e.target.tagName !== 'INPUT') {
-                        const cb = div.querySelector('input');
-                        cb.checked = !cb.checked;
-                    }
-                };
-                div.innerHTML = `
-                    <input type="checkbox" value="${arq.path}" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-slate-700">${arq.nome}</span>
-                        <span class="text-[9px] text-slate-400 uppercase">${arq.path}</span>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        });
-
-        // Alternar Accordion
-        function toggleAccordion() {
-            const content = document.getElementById('repoContent');
-            const icon = document.getElementById('accordionIcon');
-            content.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
-        }
-
-        function marcarTodos(status) {
-            document.querySelectorAll('#repoFileList input').forEach(cb => cb.checked = status);
-        }
-
-        // Processar Selecionados do Repositório
-        async function carregarSelecionados() {
-            const selecionados = Array.from(document.querySelectorAll('#repoFileList input:checked')).map(cb => cb.value);
-            if(selecionados.length === 0) return alert("Selecione ao menos um arquivo.");
-
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Carregando...";
-            btn.disabled = true;
-
-            for(const path of selecionados) {
-                try {
-                    const res = await fetch(path);
-                    const text = await res.text();
-                    await processarTextoCSV(text);
-                } catch(e) { console.error("Erro ao carregar " + path, e); }
-            }
-
-            btn.innerText = originalText;
-            btn.disabled = false;
-            finalizeImport();
-            toggleAccordion(); // Fecha após carregar
-        }
-
-        // Importação Manual
+        // --- LÓGICA DE IMPORTAÇÃO E PARSE (Mantida) ---
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
-            let proc = 0;
-            files.forEach(f => {
-                Papa.parse(f, {
+            let processed = 0;
+            dataStore = {}; 
+            files.forEach(file => {
+                Papa.parse(file, {
                     delimiter: ";", encoding: "ISO-8859-1", skipEmptyLines: true,
-                    complete: (results) => {
+                    complete: function(results) {
                         processCSV(results.data);
-                        proc++;
-                        if(proc === files.length) finalizeImport();
+                        processed++;
+                        if (processed === files.length) finalizeImport();
                     }
                 });
             });
         });
 
-        function processarTextoCSV(text) {
-            return new Promise(resolve => {
-                Papa.parse(text, {
-                    delimiter: ";", encoding: "ISO-8859-1", skipEmptyLines: true,
-                    complete: (results) => {
-                        processCSV(results.data);
-                        resolve();
-                    }
-                });
-            });
-        }
-
         function processCSV(data) {
-            let rawEnte = data[0].find(cell => cell && cell.trim().length > 3 && !cell.includes('/') && !cell.includes('Mês')) || "OUTROS";
+            let rawEnte = data[0].find(cell => cell.trim().length > 3 && !cell.includes('/') && !cell.includes('Mês')) || "OUTROS";
             let ente = rawEnte.trim().toUpperCase();
             let mesRef = "";
-            for(let i=0; i<10; i++){
-                if(!data[i]) continue;
+            for(let i=0; i<10; i++) {
                 let rowStr = data[i].join(' ');
                 if(/\d{2}\/\d{4}/.test(rowStr)) { mesRef = rowStr.match(/\d{2}\/\d{4}/)[0]; break; }
             }
@@ -242,14 +150,15 @@
             let currentID = null;
             let capturarProximoTotal = false;
 
-            data.forEach(row => {
+            data.forEach((row) => {
                 const text = row.join(' ');
                 if (text.includes("Vínculo:")) {
                     const m = text.match(/Vínculo: (\d+) - ([\w\s]+)/);
                     if (m) {
                         currentID = m[1];
-                        if (!dataStore[mesRef][ente].vinculos[currentID]) 
-                            dataStore[mesRef][ente].vinculos[currentID] = { nome: m[2].trim(), bruto: 0, patronal: 0, liq: 0, qtd: 0 };
+                        if (!dataStore[mesRef][ente].vinculos[currentID]) {
+                            dataStore[mesRef][ente].vinculos[currentID] = { nome: m[2].trim().toUpperCase(), bruto: 0, patronal: 0, liq: 0, qtd: 0 };
+                        }
                     }
                     capturarProximoTotal = false;
                 }
@@ -280,64 +189,79 @@
                     if (ente === "CONSOLIDADO") return;
                     Object.keys(dataStore[mes][ente].vinculos).forEach(id => {
                         const v = dataStore[mes][ente].vinculos[id];
-                        if (!dataStore[mes]["CONSOLIDADO"].vinculos[id]) 
-                            dataStore[mes]["CONSOLIDADO"].vinculos[id] = { nome: v.nome, bruto: 0, patronal: 0, liq: 0, qtd: 0 };
+                        if (!dataStore[mes]["CONSOLIDADO"].vinculos[id]) dataStore[mes]["CONSOLIDADO"].vinculos[id] = { nome: v.nome, bruto: 0, patronal: 0, liq: 0, qtd: 0 };
                         const consV = dataStore[mes]["CONSOLIDADO"].vinculos[id];
                         consV.bruto += v.bruto; consV.patronal += v.patronal; consV.liq += v.liq; consV.qtd += v.qtd;
                     });
                 });
             });
-
             const months = Object.keys(dataStore).sort((a,b) => {
                 const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
                 return new Date(y1, m1-1) - new Date(y2, m2-1);
             });
+            const sel = document.getElementById('monthSelector');
+            sel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            sel.onchange = (e) => { currentMonth = e.target.value; updateDashboard(); };
+            currentMonth = months[0];
+            document.getElementById('filterBar').classList.remove('hidden');
+            updateDashboard();
+        }
 
-            if(months.length > 0) {
-                const sel = document.getElementById('monthSelector');
-                sel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-                sel.onchange = (e) => { currentMonth = e.target.value; updateDashboard(); };
-                currentMonth = months[months.length - 1];
-                document.getElementById('filterBar').classList.remove('hidden');
-                updateDashboard();
-            }
+        function renderVinculoTrendButtons() {
+            const container = document.getElementById('vinculoTrendSelector');
+            container.innerHTML = '';
+            let vinculosUnicos = new Set();
+            Object.values(dataStore).forEach(mes => { if(mes[currentEnte]) Object.values(mes[currentEnte].vinculos).forEach(v => vinculosUnicos.add(v.nome)); });
+            const btnTodos = document.createElement('button');
+            btnTodos.innerText = 'GERAL (SOMA)';
+            btnTodos.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === 'TODOS' ? 'bg-slate-700 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
+            btnTodos.onclick = () => { currentTrendVinculo = 'TODOS'; renderVinculoTrendButtons(); renderTrendChart(); };
+            container.appendChild(btnTodos);
+            Array.from(vinculosUnicos).sort().forEach(nome => {
+                const btn = document.createElement('button');
+                btn.innerText = nome;
+                btn.className = `px-2 py-1 rounded text-[9px] font-black transition-all ${currentTrendVinculo === nome ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`;
+                btn.onclick = () => { currentTrendVinculo = nome; renderVinculoTrendButtons(); renderTrendChart(); };
+                container.appendChild(btn);
+            });
         }
 
         function renderEnteButtons() {
             const container = document.getElementById('enteSelector');
             container.innerHTML = '';
-            Object.keys(dataStore[currentMonth]).sort().forEach(key => {
+            const entes = Object.keys(dataStore[currentMonth]);
+            entes.sort((a,b) => a === 'CONSOLIDADO' ? -1 : (b === 'CONSOLIDADO' ? 1 : a.localeCompare(b)));
+            entes.forEach(key => {
                 const btn = document.createElement('button');
                 btn.innerText = key;
                 btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${key === currentEnte ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`;
-                btn.onclick = () => { currentEnte = key; renderEnteButtons(); updateDashboard(); };
+                btn.onclick = () => { currentEnte = key; currentTrendVinculo = 'TODOS'; renderEnteButtons(); updateDashboard(); };
                 container.appendChild(btn);
             });
         }
 
         function updateDashboard() {
             renderEnteButtons();
+            renderVinculoTrendButtons();
             document.getElementById('dashboard').classList.remove('hidden');
             const data = dataStore[currentMonth][currentEnte];
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            let tB = 0, tP = 0, tL = 0, tQ = 0, labels = [], vals = [];
-
+            let tB = 0, tP = 0, tL = 0, tQ = 0, chartLabels = [], chartData = [];
             Object.keys(data.vinculos).forEach(id => {
                 const v = data.vinculos[id];
                 if(v.bruto === 0 && v.qtd === 0) return;
                 tB += v.bruto; tP += v.patronal; tL += v.liq; tQ += v.qtd;
-                labels.push(v.nome); vals.push(v.bruto);
-                tbody.innerHTML += `<tr><td class="px-6 py-4 font-bold text-slate-700">${v.nome}</td><td class="px-6 py-4 text-center font-bold text-blue-600">${v.qtd}</td><td class="px-6 py-4 text-right">R$ ${v.bruto.toLocaleString('pt-BR')}</td><td class="px-6 py-4 text-right text-orange-600 font-bold">R$ ${v.patronal.toLocaleString('pt-BR')}</td></tr>`;
+                chartLabels.push(v.nome); chartData.push(v.bruto);
+                tbody.innerHTML += `<tr><td class="px-6 py-4 font-bold text-slate-700 italic">${v.nome}</td><td class="px-6 py-4 text-center font-bold text-blue-600">${v.qtd}</td><td class="px-6 py-4 text-right">R$ ${v.bruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td><td class="px-6 py-4 text-right text-orange-600 font-bold">R$ ${v.patronal.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td></tr>`;
             });
-
-            document.getElementById('kpi-bruto').innerText = 'R$ ' + tB.toLocaleString('pt-BR');
-            document.getElementById('kpi-patronal').innerText = 'R$ ' + tP.toLocaleString('pt-BR');
-            document.getElementById('kpi-liquido').innerText = 'R$ ' + tL.toLocaleString('pt-BR');
+            document.getElementById('kpi-bruto').innerText = 'R$ ' + tB.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            document.getElementById('kpi-patronal').innerText = 'R$ ' + tP.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            document.getElementById('kpi-liquido').innerText = 'R$ ' + tL.toLocaleString('pt-BR', {minimumFractionDigits:2});
             document.getElementById('kpi-servidores').innerText = tQ;
             document.getElementById('dataLabel').innerText = `${currentEnte} • ${currentMonth}`;
-            document.getElementById('trendLabel').innerText = currentEnte;
-            renderPieChart(labels, vals);
+            document.getElementById('trendLabel').innerText = `${currentEnte} / ${currentTrendVinculo}`;
+            renderPieChart(chartLabels, chartData);
             renderTrendChart();
         }
 
@@ -346,28 +270,104 @@
             if(chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e40af', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
+                data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1e40af', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], borderWidth: 0 }] },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: 'bold' } } },
+                        datalabels: { display: false } // Desativado na pizza para não poluir
+                    } 
+                }
             });
         }
 
         function renderTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             if(trendChartInstance) trendChartInstance.destroy();
+
             const months = Object.keys(dataStore).sort((a,b) => {
                 const [m1, y1] = a.split('/'); const [m2, y2] = b.split('/');
                 return new Date(y1, m1-1) - new Date(y2, m2-1);
             });
-            const bruto = [], qtd = [];
+
+            const brutoData = [], qtdData = [];
             months.forEach(m => {
-                let mb = 0, mq = 0;
-                if(dataStore[m][currentEnte]) Object.values(dataStore[m][currentEnte].vinculos).forEach(v => { mb += v.bruto; mq += v.qtd; });
-                bruto.push(mb); qtd.push(mq);
+                let monthBruto = 0, monthQtd = 0;
+                const enteData = dataStore[m][currentEnte];
+                if(enteData) {
+                    Object.values(enteData.vinculos).forEach(v => {
+                        if(currentTrendVinculo === "TODOS" || v.nome === currentTrendVinculo) { monthBruto += v.bruto; monthQtd += v.qtd; }
+                    });
+                }
+                brutoData.push(monthBruto); qtdData.push(monthQtd);
             });
+
             trendChartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: months, datasets: [{ label: 'Bruto', data: bruto, backgroundColor: '#3b82f6', yAxisID: 'y' }, { label: 'Servidores', data: qtd, backgroundColor: '#8b5cf6', yAxisID: 'y1' }] },
-                options: { maintainAspectRatio: false, scales: { y: { type: 'linear', position: 'left' }, y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } } } }
+                data: {
+                    labels: months,
+                    datasets: [
+                        { 
+                            label: 'Gasto Bruto (R$)', 
+                            data: brutoData, 
+                            backgroundColor: '#3b82f6', 
+                            yAxisID: 'yFinance', 
+                            borderRadius: 5,
+                            datalabels: { // Configuração dos rótulos para Financeiro
+                                align: 'end',
+                                anchor: 'end',
+                                backgroundColor: 'white',
+                                borderRadius: 4,
+                                color: '#1e40af',
+                                font: { weight: 'bold', size: 10 },
+                                formatter: (value) => 'R$ ' + value.toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+                            }
+                        },
+                        { 
+                            label: 'Qtd. Servidores', 
+                            data: qtdData, 
+                            backgroundColor: '#a855f7', 
+                            yAxisID: 'yPeople', 
+                            borderRadius: 5,
+                            datalabels: { // Configuração dos rótulos para Pessoal
+                                align: 'end',
+                                anchor: 'end',
+                                backgroundColor: 'white',
+                                borderRadius: 4,
+                                color: '#6b21a8',
+                                font: { weight: 'bold', size: 10 },
+                                formatter: (value) => value
+                            }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 30 } }, // Espaço extra para os números no topo
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { weight: 'bold' } } },
+                        datalabels: {
+                            display: true,
+                            offset: 2,
+                        }
+                    },
+                    scales: {
+                        yFinance: { 
+                            type: 'linear', 
+                            position: 'left', 
+                            title: { display: true, text: 'Financeiro (R$)', font: { size: 10, weight: 'bold' } },
+                            suggestedMax: Math.max(...brutoData) * 1.15 // Espaço para o rótulo não cortar
+                        },
+                        yPeople: { 
+                            type: 'linear', 
+                            position: 'right', 
+                            grid: { drawOnChartArea: false }, 
+                            title: { display: true, text: 'Nº Servidores', font: { size: 10, weight: 'bold' } },
+                            suggestedMax: Math.max(...qtdData) * 1.15
+                        }
+                    }
+                }
             });
         }
     </script>
