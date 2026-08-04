@@ -1962,6 +1962,154 @@
       }
     }
   },
+  "07/2026": {
+    "FMAS": {
+      "name": "FMAS",
+      "vinculos": {
+        "30": {
+          "nome": "EFETIVO",
+          "bruto": 110824.05,
+          "patronal": 56384.89,
+          "liq": 84966.2,
+          "qtd": 30
+        },
+        "35": {
+          "nome": "COMISSIONADOS",
+          "bruto": 145150,
+          "patronal": 23769.85,
+          "liq": 126148.35,
+          "qtd": 30
+        },
+        "97": {
+          "nome": "CONTRATOS",
+          "bruto": 95989.36,
+          "patronal": 15790.91,
+          "liq": 87409.36,
+          "qtd": 40
+        },
+        "03": {
+          "nome": "ELETIVO",
+          "bruto": 53231.75,
+          "patronal": 8996.15,
+          "liq": 46255.78,
+          "qtd": 11
+        }
+      }
+    },
+    "FME": {
+      "name": "FME",
+      "vinculos": {
+        "30": {
+          "nome": "EFETIVO",
+          "bruto": 6426826.78,
+          "patronal": 3154055.97,
+          "liq": 4226360.07,
+          "qtd": 794
+        },
+        "35": {
+          "nome": "COMISSIONADOS",
+          "bruto": 263500,
+          "patronal": 57420,
+          "liq": 229490.91,
+          "qtd": 68
+        },
+        "60": {
+          "nome": "CLT",
+          "bruto": 31899.61,
+          "patronal": 6613.18,
+          "liq": 23693.76,
+          "qtd": 3
+        },
+        "97": {
+          "nome": "CONTRATOS",
+          "bruto": 2748070.34,
+          "patronal": 572276,
+          "liq": 2517756.4,
+          "qtd": 1057
+        },
+        "98": {
+          "nome": "ESTATUT",
+          "bruto": 5854.87,
+          "patronal": 4156.95,
+          "liq": 4758.31,
+          "qtd": 1
+        }
+      }
+    },
+    "FMS": {
+      "name": "FMS",
+      "vinculos": {
+        "30": {
+          "nome": "EFETIVO",
+          "bruto": 5685372.2,
+          "patronal": 2259464.35,
+          "liq": 3825969.43,
+          "qtd": 600
+        },
+        "35": {
+          "nome": "COMISSIONADOS",
+          "bruto": 408533.33,
+          "patronal": 69351.46,
+          "liq": 350947.75,
+          "qtd": 82
+        },
+        "60": {
+          "nome": "CLT",
+          "bruto": 45890.71,
+          "patronal": 7636.97,
+          "liq": 32278.66,
+          "qtd": 4
+        },
+        "97": {
+          "nome": "CONTRATOS",
+          "bruto": 226914.1,
+          "patronal": 28139.76,
+          "liq": 182953.09,
+          "qtd": 43
+        }
+      }
+    },
+    "PREF": {
+      "name": "PREF",
+      "vinculos": {
+        "30": {
+          "nome": "EFETIVO",
+          "bruto": 3268156.59,
+          "patronal": 1569092.58,
+          "liq": 2167747.47,
+          "qtd": 339
+        },
+        "35": {
+          "nome": "COMISSIONADOS",
+          "bruto": 2507265.14,
+          "patronal": 433501.86,
+          "liq": 2060438.04,
+          "qtd": 497
+        },
+        "60": {
+          "nome": "CLT",
+          "bruto": 19042.06,
+          "patronal": 2354.32,
+          "liq": 10457.3,
+          "qtd": 5
+        },
+        "97": {
+          "nome": "CONTRATOS",
+          "bruto": 81472.3,
+          "patronal": 12077.38,
+          "liq": 74977.53,
+          "qtd": 38
+        },
+        "03": {
+          "nome": "ELETIVO",
+          "bruto": 47700,
+          "patronal": 8299.8,
+          "liq": 35071.53,
+          "qtd": 2
+        }
+      }
+    }
+  },
   "08/2025": {
     "FMAS": {
       "name": "FMAS",
